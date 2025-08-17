@@ -3,39 +3,37 @@ import { TreeNode, CheckboxState } from '../../types/api.types';
 import { StreamItem } from './StreamItem';
 import { VirtualizedChildren } from './VirtualizedChildren';
 import { calculateSpaceCheckboxState } from '../../utils/treeUtils';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { toggleExpandedNode, addStreamOptimistically, removeStreamOptimistically, replaceStreamOptimistically } from '../../store/slices/spacesSlice';
+import { selectAllStreamsInSpace, deselectAllStreamsInSpace } from '../../store/slices/selectionSlice';
+import { addStream } from '../../store/slices/spacesSlice';
+import { addToast } from '../../store/slices/toastSlice';
 
 interface SpaceNodeProps {
   node: TreeNode;
-  selectedStreamIds: Set<number>;
-  onStreamSelectionChange: (streamId: number, selected: boolean) => void;
-  onSpaceSelectionChange: (spaceId: number, selected: boolean) => void;
-  onToggleExpand: (spaceId: number) => void;
-  onAddStream: (spaceId: number, streamName: string) => void;
-  onDeleteStream: (streamId: number) => void;
   level: number;
   enableVirtualization?: boolean;
   virtualizationConfig?: {
     maxHeight?: number;
     itemHeight?: number;
-    threshold?: number; // Number of items before virtualization kicks in
+    threshold?: number;
   };
 }
 
 export const SpaceNode: React.FC<SpaceNodeProps> = ({
   node,
-  selectedStreamIds,
-  onStreamSelectionChange,
-  onSpaceSelectionChange,
-  onToggleExpand,
-  onAddStream,
-  onDeleteStream,
   level,
   enableVirtualization = true,
   virtualizationConfig = {}
 }) => {
+  const dispatch = useAppDispatch();
   const [isAddingStream, setIsAddingStream] = useState(false);
   const [newStreamName, setNewStreamName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Redux state selectors
+  const selectedStreamIds = useAppSelector(state => state.selection.selectedStreamIds);
+  const spaces = useAppSelector(state => state.spaces.optimisticSpaces);
   
   // Memoize expensive calculations
   const checkboxState = useMemo(() => 
@@ -60,12 +58,16 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
 
   // Memoized event handlers
   const handleSpaceCheckboxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onSpaceSelectionChange(node.id, e.target.checked);
-  }, [node.id, onSpaceSelectionChange]);
+    if (e.target.checked) {
+      dispatch(selectAllStreamsInSpace({ spaceId: node.id, spaces }));
+    } else {
+      dispatch(deselectAllStreamsInSpace({ spaceId: node.id, spaces }));
+    }
+  }, [node.id, spaces, dispatch]);
 
   const handleToggleExpand = useCallback(() => {
-    onToggleExpand(node.id);
-  }, [node.id, onToggleExpand]);
+    dispatch(toggleExpandedNode(node.id));
+  }, [node.id, dispatch]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -79,13 +81,51 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
     setNewStreamName('');
   }, []);
 
-  const handleSubmitStream = useCallback(() => {
+  const handleSubmitStream = useCallback(async () => {
     if (newStreamName.trim()) {
-      onAddStream(node.id, newStreamName.trim());
+      // Generate temporary ID for optimistic update
+      const tempId = Date.now();
+      const tempStream = {
+        id: tempId,
+        name: newStreamName.trim()
+      };
+
+      // Optimistic update
+      dispatch(addStreamOptimistically({ spaceId: node.id, stream: tempStream }));
+
+      try {
+        // Make API call
+        const result = await dispatch(addStream({ spaceId: node.id, streamName: newStreamName.trim() })).unwrap();
+        
+        // Replace temp stream with real one
+        dispatch(replaceStreamOptimistically({ 
+          oldId: tempId, 
+          newStream: result.stream 
+        }));
+        
+        // Show success toast
+        dispatch(addToast({
+          id: Date.now().toString(),
+          message: `Stream "${newStreamName.trim()}" added successfully!`,
+          type: 'success'
+        }));
+        
+      } catch (error) {
+        // Remove optimistic update on error
+        dispatch(removeStreamOptimistically(tempId));
+        
+        const errorMessage = error instanceof Error ? error.message : 'Failed to add stream';
+        dispatch(addToast({
+          id: Date.now().toString(),
+          message: `Failed to add stream: ${errorMessage}`,
+          type: 'error'
+        }));
+      }
+      
       setIsAddingStream(false);
       setNewStreamName('');
     }
-  }, [newStreamName, node.id, onAddStream]);
+  }, [newStreamName, node.id, dispatch]);
 
   const handleCancelStream = useCallback(() => {
     setIsAddingStream(false);
@@ -277,12 +317,6 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
           <VirtualizedChildren
             streams={node.streams}
             childNodes={node.children}
-            selectedStreamIds={selectedStreamIds}
-            onStreamSelectionChange={onStreamSelectionChange}
-            onSpaceSelectionChange={onSpaceSelectionChange}
-            onToggleExpand={onToggleExpand}
-            onAddStream={onAddStream}
-            onDeleteStream={onDeleteStream}
             level={level}
             maxHeight={maxHeight}
             itemHeight={itemHeight}
@@ -294,9 +328,6 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
               <StreamItem
                 key={stream.id}
                 stream={stream}
-                isSelected={selectedStreamIds.has(stream.id)}
-                onSelectionChange={onStreamSelectionChange}
-                onDelete={onDeleteStream}
                 level={level + 1}
               />
             ))}
@@ -306,12 +337,6 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
               <SpaceNode
                 key={childNode.id}
                 node={childNode}
-                selectedStreamIds={selectedStreamIds}
-                onStreamSelectionChange={onStreamSelectionChange}
-                onSpaceSelectionChange={onSpaceSelectionChange}
-                onToggleExpand={onToggleExpand}
-                onAddStream={onAddStream}
-                onDeleteStream={onDeleteStream}
                 level={level + 1}
                 enableVirtualization={enableVirtualization}
                 virtualizationConfig={virtualizationConfig}

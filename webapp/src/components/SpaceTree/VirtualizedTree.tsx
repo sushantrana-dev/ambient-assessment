@@ -1,16 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { TreeNode, Stream } from '../../types/api.types';
 import { StreamItem } from './StreamItem';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { toggleExpandedNode } from '../../store/slices/spacesSlice';
+import { selectAllStreamsInSpace, deselectAllStreamsInSpace } from '../../store/slices/selectionSlice';
 
 interface VirtualizedTreeProps {
   streams: Stream[];
   childNodes: TreeNode[];
-  selectedStreamIds: Set<number>;
-  onStreamSelectionChange: (streamId: number, selected: boolean) => void;
-  onSpaceSelectionChange: (spaceId: number, selected: boolean) => void;
-  onToggleExpand: (spaceId: number) => void;
-  onAddStream: (spaceId: number, streamName: string) => void;
-  onDeleteStream: (streamId: number) => void;
   level: number;
   containerHeight?: number;
   itemHeight?: number;
@@ -26,18 +23,17 @@ interface TreeItem {
 export function VirtualizedTree({
   streams,
   childNodes,
-  selectedStreamIds,
-  onStreamSelectionChange,
-  onSpaceSelectionChange,
-  onToggleExpand,
-  onAddStream,
-  onDeleteStream,
   level,
   containerHeight = 400,
   itemHeight = 40
 }: VirtualizedTreeProps) {
+  const dispatch = useAppDispatch();
   const [scrollTop, setScrollTop] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Redux state selectors
+  const selectedStreamIds = useAppSelector(state => state.selection.selectedStreamIds);
+  const spaces = useAppSelector(state => state.spaces.optimisticSpaces);
 
   // Flatten the tree structure into a linear array
   const flattenedItems = useMemo((): TreeItem[] => {
@@ -105,9 +101,6 @@ export function VirtualizedTree({
         <StreamItem
           key={stream.id}
           stream={stream}
-          isSelected={selectedStreamIds.has(stream.id)}
-          onSelectionChange={onStreamSelectionChange}
-          onDelete={onDeleteStream}
           level={item.level}
         />
       );
@@ -122,7 +115,7 @@ export function VirtualizedTree({
           <div className="space-node__header">
             <button
               type="button"
-              onClick={() => onToggleExpand(spaceNode.id)}
+              onClick={() => dispatch(toggleExpandedNode(spaceNode.id))}
               className={`space-node__expand-btn ${spaceNode.isExpanded ? 'expanded' : ''}`}
               aria-label={`${spaceNode.isExpanded ? 'Collapse' : 'Expand'} ${spaceNode.name}`}
             >
@@ -149,7 +142,13 @@ export function VirtualizedTree({
                 <input
                   type="checkbox"
                   checked={false} // This would need to be calculated
-                  onChange={(e) => onSpaceSelectionChange(spaceNode.id, e.target.checked)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      dispatch(selectAllStreamsInSpace({ spaceId: spaceNode.id, spaces }));
+                    } else {
+                      dispatch(deselectAllStreamsInSpace({ spaceId: spaceNode.id, spaces }));
+                    }
+                  }}
                   className="space-node__checkbox"
                   aria-label={`Select all streams in ${spaceNode.name}`}
                 />
@@ -167,7 +166,7 @@ export function VirtualizedTree({
         </div>
       );
     }
-  }, [selectedStreamIds, onStreamSelectionChange, onDeleteStream, onToggleExpand, onSpaceSelectionChange]);
+  }, [selectedStreamIds, dispatch, spaces]);
 
   // Reset scroll position when items change
   useEffect(() => {

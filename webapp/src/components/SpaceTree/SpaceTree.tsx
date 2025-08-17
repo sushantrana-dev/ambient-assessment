@@ -1,14 +1,8 @@
-import React, { useState } from 'react';
-import { TreeNode } from '../../types/api.types';
+import React, { useMemo } from 'react';
 import { SpaceNode } from './SpaceNode';
-import { updateStreamSelection, updateSpaceSelection } from '../../utils/treeUtils';
+import { useAppSelector } from '../../store/hooks';
 
 interface SpaceTreeProps {
-  spaces: TreeNode[];
-  selectedStreamIds: Set<number>;
-  onSelectionChange: (selectedStreamIds: Set<number>) => void;
-  onAddStream: (spaceId: number, streamName: string) => void;
-  onDeleteStream: (streamId: number) => void;
   isLoading?: boolean;
   enableVirtualization?: boolean;
   virtualizationConfig?: {
@@ -19,48 +13,26 @@ interface SpaceTreeProps {
 }
 
 export const SpaceTree: React.FC<SpaceTreeProps> = ({
-  spaces,
-  selectedStreamIds,
-  onSelectionChange,
-  onAddStream,
-  onDeleteStream,
   isLoading = false,
   enableVirtualization = true,
   virtualizationConfig = {}
 }) => {
-  const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set());
+  // Redux state selectors
+  const spaces = useAppSelector(state => state.spaces.optimisticSpaces);
+  const selectedStreamIds = useAppSelector(state => state.selection.selectedStreamIds);
+  const expandedNodes = useAppSelector(state => state.spaces.expandedNodes);
 
-  const handleStreamSelectionChange = (streamId: number, selected: boolean) => {
-    const newSelectedIds = updateStreamSelection(spaces, streamId, selected, selectedStreamIds);
-    onSelectionChange(newSelectedIds);
-  };
-
-  const handleSpaceSelectionChange = (spaceId: number, selected: boolean) => {
-    const newSelectedIds = updateSpaceSelection(spaces, spaceId, selected, selectedStreamIds);
-    onSelectionChange(newSelectedIds);
-  };
-
-  const handleToggleExpand = (spaceId: number) => {
-    setExpandedNodes(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(spaceId)) {
-        newSet.delete(spaceId);
-      } else {
-        newSet.add(spaceId);
-      }
-      return newSet;
-    });
-  };
-
-  const updateNodeExpansion = (nodes: TreeNode[]): TreeNode[] => {
-    return nodes.map(node => ({
-      ...node,
-      isExpanded: expandedNodes.has(node.id),
-      children: updateNodeExpansion(node.children)
-    }));
-  };
-
-  const spacesWithExpansion = updateNodeExpansion(spaces);
+  // Update nodes with expansion state
+  const spacesWithExpansion = useMemo(() => {
+    const updateNodeExpansion = (nodes: any[]): any[] => {
+      return nodes.map(node => ({
+        ...node,
+        isExpanded: expandedNodes.has(node.id),
+        children: updateNodeExpansion(node.children)
+      }));
+    };
+    return updateNodeExpansion(spaces);
+  }, [spaces, expandedNodes]);
 
   // Loading state
   if (isLoading) {
@@ -121,12 +93,6 @@ export const SpaceTree: React.FC<SpaceTreeProps> = ({
           <SpaceNode
             key={node.id}
             node={node}
-            selectedStreamIds={selectedStreamIds}
-            onStreamSelectionChange={handleStreamSelectionChange}
-            onSpaceSelectionChange={handleSpaceSelectionChange}
-            onToggleExpand={handleToggleExpand}
-            onAddStream={onAddStream}
-            onDeleteStream={onDeleteStream}
             level={0}
             enableVirtualization={enableVirtualization}
             virtualizationConfig={virtualizationConfig}

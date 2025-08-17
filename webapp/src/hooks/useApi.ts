@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Site, FlattenedSpacesData } from '../types/api.types';
 
 const API_BASE_URL = 'https://interviews.ambient.ai/api/v1';
+// const API_BASE_URL = 'http://localhost:8000';
 
 interface ApiState<T> {
   data: T | null;

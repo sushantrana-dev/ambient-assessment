@@ -1,28 +1,69 @@
 import React, { useCallback } from 'react';
 import { Stream } from '../../types/api.types';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { toggleStreamSelection } from '../../store/slices/selectionSlice';
+import { removeStreamOptimistically, removeStream, setOptimisticSpaces } from '../../store/slices/spacesSlice';
+import { addToast } from '../../store/slices/toastSlice';
 
 interface StreamItemProps {
   stream: Stream;
-  isSelected: boolean;
-  onSelectionChange: (streamId: number, selected: boolean) => void;
-  onDelete: (streamId: number) => void;
   level: number;
 }
 
 export const StreamItem: React.FC<StreamItemProps> = ({
   stream,
-  isSelected,
-  onSelectionChange,
-  onDelete,
   level
 }) => {
-  const handleCheckboxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onSelectionChange(stream.id, e.target.checked);
-  }, [stream.id, onSelectionChange]);
+  const dispatch = useAppDispatch();
+  const selectedStreamIds = useAppSelector(state => state.selection.selectedStreamIds);
+  const spaces = useAppSelector(state => state.spaces.optimisticSpaces);
+  
+  const isSelected = selectedStreamIds.has(stream.id);
 
-  const handleDeleteClick = useCallback(() => {
-    onDelete(stream.id);
-  }, [stream.id, onDelete]);
+  const handleCheckboxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    dispatch(toggleStreamSelection(stream.id));
+  }, [stream.id, dispatch]);
+
+  const handleDeleteClick = useCallback(async () => {
+    // Find stream name for toast message
+    const findStreamName = (nodes: any[]): string | null => {
+      for (const node of nodes) {
+        const streammer = node?.streams?.find((s: any) => s.id === stream.id);
+        if (streammer) return streammer.name;
+        const found = findStreamName(node.children);
+        if (found) return found;
+      }
+      return null;
+    };
+    
+    const streamName = findStreamName(spaces) || 'Stream';
+
+    // Optimistic update
+    dispatch(removeStreamOptimistically(stream.id));
+
+    try {
+      
+      // Make API call
+      await dispatch(removeStream(stream.id)).unwrap();
+      
+      // Show success toast
+      dispatch(addToast({
+        id: Date.now().toString(),
+        message: `Stream "${streamName}" deleted successfully!`,
+        type: 'success'
+      }));
+      
+    } catch (error) {
+      // Revert optimistic state by syncing with real state
+      dispatch(setOptimisticSpaces(spaces));
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete stream';
+      dispatch(addToast({
+        id: Date.now().toString(),
+        message: `Failed to delete stream: ${errorMessage}`,
+        type: 'error'
+      }));
+    }
+  }, [stream.id, spaces, dispatch]);
 
   return (
     <div 

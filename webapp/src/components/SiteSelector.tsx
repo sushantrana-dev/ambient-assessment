@@ -1,16 +1,16 @@
 import React, { useCallback, useMemo } from 'react';
-import { Site } from '../types/api.types';
 import { useSites } from '../hooks/useApi';
+import { useAppDispatch } from '../store/hooks';
+import { setSelectedSite } from '../store/slices/siteSlice';
 
 interface SiteSelectorProps {
   selectedSiteId: string | null;
-  onSiteChange: (siteId: string) => void;
 }
 
 export const SiteSelector: React.FC<SiteSelectorProps> = ({
-  selectedSiteId,
-  onSiteChange
+  selectedSiteId
 }) => {
+  const dispatch = useAppDispatch();
   const { data: sitesData, loading, error } = useSites();
 
   // Memoize the sites array to prevent unnecessary re-renders
@@ -23,9 +23,11 @@ export const SiteSelector: React.FC<SiteSelectorProps> = ({
   const handleSiteChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const siteId = e.target.value;
     if (siteId) {
-      onSiteChange(siteId);
+      dispatch(setSelectedSite(siteId));
+    } else {
+      dispatch(setSelectedSite(null));
     }
-  }, [onSiteChange]);
+  }, [dispatch]);
 
   if (loading) {
     return (

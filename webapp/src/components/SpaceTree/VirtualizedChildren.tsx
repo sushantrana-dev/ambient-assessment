@@ -6,12 +6,6 @@ import { SpaceNode } from './SpaceNode';
 interface VirtualizedChildrenProps {
   streams: Stream[];
   childNodes: TreeNode[];
-  selectedStreamIds: Set<number>;
-  onStreamSelectionChange: (streamId: number, selected: boolean) => void;
-  onSpaceSelectionChange: (spaceId: number, selected: boolean) => void;
-  onToggleExpand: (spaceId: number) => void;
-  onAddStream: (spaceId: number, streamName: string) => void;
-  onDeleteStream: (streamId: number) => void;
   level: number;
   maxHeight?: number;
   itemHeight?: number;
@@ -27,12 +21,6 @@ interface ChildItem {
 export function VirtualizedChildren({
   streams,
   childNodes,
-  selectedStreamIds,
-  onStreamSelectionChange,
-  onSpaceSelectionChange,
-  onToggleExpand,
-  onAddStream,
-  onDeleteStream,
   level,
   maxHeight = 300,
   itemHeight = 48
@@ -101,9 +89,6 @@ export function VirtualizedChildren({
         <StreamItem
           key={stream.id}
           stream={stream}
-          isSelected={selectedStreamIds.has(stream.id)}
-          onSelectionChange={onStreamSelectionChange}
-          onDelete={onDeleteStream}
           level={level + 1}
         />
       );
@@ -113,17 +98,11 @@ export function VirtualizedChildren({
         <SpaceNode
           key={spaceNode.id}
           node={spaceNode}
-          selectedStreamIds={selectedStreamIds}
-          onStreamSelectionChange={onStreamSelectionChange}
-          onSpaceSelectionChange={onSpaceSelectionChange}
-          onToggleExpand={onToggleExpand}
-          onAddStream={onAddStream}
-          onDeleteStream={onDeleteStream}
           level={level + 1}
         />
       );
     }
-  }, [selectedStreamIds, onStreamSelectionChange, onDeleteStream, onSpaceSelectionChange, onToggleExpand, onAddStream, level]);
+  }, [level]);
 
   // If no children, return null
   if (allChildren.length === 0) {

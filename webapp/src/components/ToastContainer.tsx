@@ -1,19 +1,19 @@
-import React, { useState, useCallback } from 'react';
-import Toast, { ToastProps } from './Toast';
-
-export interface ToastMessage {
-  id: string;
-  message: string;
-  type: 'success' | 'error' | 'info';
-  duration?: number;
-}
+import React from 'react';
+import Toast from './Toast';
+import { useAppDispatch } from '../store/hooks';
+import { removeToast } from '../store/slices/toastSlice';
 
 interface ToastContainerProps {
-  toasts: ToastMessage[];
-  onRemoveToast: (id: string) => void;
+  toasts: any[];
 }
 
-const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemoveToast }) => {
+const ToastContainer: React.FC<ToastContainerProps> = ({ toasts }) => {
+  const dispatch = useAppDispatch();
+
+  const handleRemoveToast = (id: string) => {
+    dispatch(removeToast(id));
+  };
+
   return (
     <div className="toast-container">
       {toasts.map((toast, index) => (
@@ -30,7 +30,7 @@ const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onRemoveToast }
             message={toast.message}
             type={toast.type}
             duration={toast.duration}
-            onClose={onRemoveToast}
+            onClose={handleRemoveToast}
           />
         </div>
       ))}

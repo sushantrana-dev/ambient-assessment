@@ -1,15 +1,17 @@
 import React, { useCallback, useMemo } from 'react';
 import { Stream } from '../../types/api.types';
+import { useAppDispatch } from '../../store/hooks';
+import { removeStreamFromSelection } from '../../store/slices/selectionSlice';
 
 interface SelectedCamerasListProps {
   selectedStreams: Stream[];
-  onRemoveStream: (streamId: number) => void;
 }
 
 export const SelectedCamerasList: React.FC<SelectedCamerasListProps> = ({
-  selectedStreams,
-  onRemoveStream
+  selectedStreams
 }) => {
+  const dispatch = useAppDispatch();
+
   // Memoize the sorted streams to prevent unnecessary re-sorting
   const sortedStreams = useMemo(() => {
     return [...selectedStreams].sort((a, b) => a.name.localeCompare(b.name));
@@ -17,8 +19,8 @@ export const SelectedCamerasList: React.FC<SelectedCamerasListProps> = ({
 
   // Memoize the remove handler
   const handleRemoveStream = useCallback((streamId: number) => {
-    onRemoveStream(streamId);
-  }, [onRemoveStream]);
+    dispatch(removeStreamFromSelection(streamId));
+  }, [dispatch]);
 
   // Memoize mouse event handlers
   const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
