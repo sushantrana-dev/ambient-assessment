@@ -47,7 +47,7 @@ export const useApi = <T>(url: string, enabled: boolean = true) => {
 };
 
 export const useSites = () => {
-  return useApi<Site[]>('/sites/');
+  return useApi<{ sites: Site[] }>('/sites/');
 };
 
 export const useSpaces = (siteId: string | null) => {

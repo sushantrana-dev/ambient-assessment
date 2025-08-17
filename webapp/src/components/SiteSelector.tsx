@@ -29,7 +29,7 @@ export const SiteSelector: React.FC<SiteSelectorProps> = ({
     );
   }
 
-  const sites = sitesData || [];
+  const sites = sitesData?.sites || [];
 
   return (
     <div className="site-selector">

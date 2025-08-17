@@ -39,6 +39,9 @@ class Space(BaseModel):
 class SpacesGroup(BaseModel):
     spaces: List[Space]
 
+class SiteData(BaseModel):
+    sites: List[Stream]
+
 class FlattenedSpacesData(BaseModel):
     spaces: List[SpacesGroup]
 
@@ -77,10 +80,10 @@ def find_space_by_id(space_id: int):
 async def root():
     return {"message": "Ambient Spaces API"}
 
-@app.get("/sites/", response_model=List[Site])
+@app.get("/sites/", response_model=SiteData)
 async def get_sites():
     """Get all available sites"""
-    return data["availableSites"]
+    return {"sites": data["availableSites"]}
 
 @app.get("/spaces/", response_model=FlattenedSpacesData)
 async def get_spaces(siteId: str = Query(..., description="The ID of the site to retrieve spaces for")):
