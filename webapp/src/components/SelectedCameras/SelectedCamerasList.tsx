@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Stream } from '../../types/api.types';
 
 interface SelectedCamerasListProps {
@@ -10,6 +10,31 @@ export const SelectedCamerasList: React.FC<SelectedCamerasListProps> = ({
   selectedStreams,
   onRemoveStream
 }) => {
+  // Memoize the sorted streams to prevent unnecessary re-sorting
+  const sortedStreams = useMemo(() => {
+    return [...selectedStreams].sort((a, b) => a.name.localeCompare(b.name));
+  }, [selectedStreams]);
+
+  // Memoize the remove handler
+  const handleRemoveStream = useCallback((streamId: number) => {
+    onRemoveStream(streamId);
+  }, [onRemoveStream]);
+
+  // Memoize mouse event handlers
+  const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const removeBtn = e.currentTarget.querySelector('.selected-cameras__remove-btn');
+    if (removeBtn) {
+      removeBtn.classList.add('visible');
+    }
+  }, []);
+
+  const handleMouseLeave = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const removeBtn = e.currentTarget.querySelector('.selected-cameras__remove-btn');
+    if (removeBtn) {
+      removeBtn.classList.remove('visible');
+    }
+  }, []);
+
   if (selectedStreams.length === 0) {
     return (
       <div className="selected-cameras">
@@ -35,22 +60,12 @@ export const SelectedCamerasList: React.FC<SelectedCamerasListProps> = ({
         <span className="selected-cameras__count">{selectedStreams.length}</span>
       </div>
       <div className="selected-cameras__list">
-        {selectedStreams.map((stream) => (
+        {sortedStreams.map((stream) => (
           <div
             key={stream.id}
             className="selected-cameras__item"
-            onMouseEnter={(e) => {
-              const removeBtn = e.currentTarget.querySelector('.selected-cameras__remove-btn');
-              if (removeBtn) {
-                removeBtn.classList.add('visible');
-              }
-            }}
-            onMouseLeave={(e) => {
-              const removeBtn = e.currentTarget.querySelector('.selected-cameras__remove-btn');
-              if (removeBtn) {
-                removeBtn.classList.remove('visible');
-              }
-            }}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
           >
             <div className="selected-cameras__item-content">
               <div className="selected-cameras__item-icon">
@@ -80,7 +95,7 @@ export const SelectedCamerasList: React.FC<SelectedCamerasListProps> = ({
             <button
               type="button"
               className="selected-cameras__remove-btn"
-              onClick={() => onRemoveStream(stream.id)}
+              onClick={() => handleRemoveStream(stream.id)}
               aria-label={`Remove ${stream.name} from selection`}
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

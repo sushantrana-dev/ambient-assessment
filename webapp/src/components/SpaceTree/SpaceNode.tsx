@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { TreeNode, CheckboxState } from '../../types/api.types';
 import { StreamItem } from './StreamItem';
 import { VirtualizedChildren } from './VirtualizedChildren';
@@ -37,49 +37,62 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
   const [newStreamName, setNewStreamName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   
-  const checkboxState = calculateSpaceCheckboxState(node, selectedStreamIds);
-  const hasChildren = node.children.length > 0 || node.streams.length > 0;
-  const totalStreams = node.streams.length + node.children.reduce((acc, child) => acc + child.streams.length, 0);
+  // Memoize expensive calculations
+  const checkboxState = useMemo(() => 
+    calculateSpaceCheckboxState(node, selectedStreamIds), 
+    [node, selectedStreamIds]
+  );
+  
+  const hasChildren = useMemo(() => 
+    node.children.length > 0 || node.streams.length > 0, 
+    [node.children.length, node.streams.length]
+  );
+  
+  const totalStreams = useMemo(() => 
+    node.streams.length + node.children.reduce((acc, child) => acc + child.streams.length, 0),
+    [node.streams.length, node.children]
+  );
   
   // Virtualization configuration
   const { maxHeight = 400, itemHeight = 48, threshold = 20 } = virtualizationConfig;
   const totalChildren = node.streams.length + node.children.length;
   const shouldUseVirtualization = enableVirtualization && totalChildren > threshold;
 
-  const handleSpaceCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Memoized event handlers
+  const handleSpaceCheckboxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     onSpaceSelectionChange(node.id, e.target.checked);
-  };
+  }, [node.id, onSpaceSelectionChange]);
 
-  const handleToggleExpand = () => {
+  const handleToggleExpand = useCallback(() => {
     onToggleExpand(node.id);
-  };
+  }, [node.id, onToggleExpand]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       handleToggleExpand();
     }
-  };
+  }, [handleToggleExpand]);
 
-  const handleAddStreamClick = () => {
+  const handleAddStreamClick = useCallback(() => {
     setIsAddingStream(true);
     setNewStreamName('');
-  };
+  }, []);
 
-  const handleSubmitStream = () => {
+  const handleSubmitStream = useCallback(() => {
     if (newStreamName.trim()) {
       onAddStream(node.id, newStreamName.trim());
       setIsAddingStream(false);
       setNewStreamName('');
     }
-  };
+  }, [newStreamName, node.id, onAddStream]);
 
-  const handleCancelStream = () => {
+  const handleCancelStream = useCallback(() => {
     setIsAddingStream(false);
     setNewStreamName('');
-  };
+  }, []);
 
-  const handleStreamInputKeyDown = (e: React.KeyboardEvent) => {
+  const handleStreamInputKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleSubmitStream();
@@ -87,7 +100,11 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
       e.preventDefault();
       handleCancelStream();
     }
-  };
+  }, [handleSubmitStream, handleCancelStream]);
+
+  const handleStreamNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewStreamName(e.target.value);
+  }, []);
 
   // Focus input when adding stream
   useEffect(() => {
@@ -96,7 +113,7 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
     }
   }, [isAddingStream]);
 
-  const getCheckboxRef = (state: CheckboxState) => {
+  const getCheckboxRef = useCallback((state: CheckboxState) => {
     switch (state) {
       case 'checked':
         return true;
@@ -105,7 +122,7 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
       case 'indeterminate':
         return false;
     }
-  };
+  }, []);
 
   return (
     <div className="space-node">
@@ -199,7 +216,7 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
                 ref={inputRef}
                 type="text"
                 value={newStreamName}
-                onChange={(e) => setNewStreamName(e.target.value)}
+                onChange={handleStreamNameChange}
                 onKeyDown={handleStreamInputKeyDown}
                 placeholder="Enter stream name..."
                 className="space-node__stream-input"
@@ -305,4 +322,6 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
       )}
     </div>
   );
-}; 
+};
+
+SpaceNode.displayName = 'SpaceNode'; 

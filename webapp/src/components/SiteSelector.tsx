@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Site } from '../types/api.types';
 import { useSites } from '../hooks/useApi';
 
@@ -12,6 +12,20 @@ export const SiteSelector: React.FC<SiteSelectorProps> = ({
   onSiteChange
 }) => {
   const { data: sitesData, loading, error } = useSites();
+
+  // Memoize the sites array to prevent unnecessary re-renders
+  const sites = useMemo(() => {
+    if (!sitesData?.sites) return [];
+    return sitesData.sites;
+  }, [sitesData]);
+
+  // Memoize the change handler
+  const handleSiteChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const siteId = e.target.value;
+    if (siteId) {
+      onSiteChange(siteId);
+    }
+  }, [onSiteChange]);
 
   if (loading) {
     return (
@@ -29,8 +43,6 @@ export const SiteSelector: React.FC<SiteSelectorProps> = ({
     );
   }
 
-  const sites = sitesData?.sites || [];
-
   return (
     <div className="site-selector">
       <label htmlFor="site-select" className="site-selector__label">
@@ -39,7 +51,7 @@ export const SiteSelector: React.FC<SiteSelectorProps> = ({
       <select
         id="site-select"
         value={selectedSiteId || ''}
-        onChange={(e) => onSiteChange(e.target.value)}
+        onChange={handleSiteChange}
         className="site-selector__select"
         aria-label="Select a site"
       >

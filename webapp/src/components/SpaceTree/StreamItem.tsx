@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Stream } from '../../types/api.types';
 
 interface StreamItemProps {
@@ -16,9 +16,13 @@ export const StreamItem: React.FC<StreamItemProps> = ({
   onDelete,
   level
 }) => {
-  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCheckboxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     onSelectionChange(stream.id, e.target.checked);
-  };
+  }, [stream.id, onSelectionChange]);
+
+  const handleDeleteClick = useCallback(() => {
+    onDelete(stream.id);
+  }, [stream.id, onDelete]);
 
   return (
     <div 
@@ -60,7 +64,7 @@ export const StreamItem: React.FC<StreamItemProps> = ({
         </div>
         <button
           type="button"
-          onClick={() => onDelete(stream.id)}
+          onClick={handleDeleteClick}
           className="stream-item__delete-btn"
           aria-label={`Delete ${stream.name}`}
           title="Delete stream"

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useOptimistic, startTransition } from 'react';
+import React, { useState, useEffect, useOptimistic, startTransition, useCallback, useMemo } from 'react';
 import { SiteSelector } from './components/SiteSelector';
-import { SpaceTree } from './components/SpaceTree/SpaceTree';
+import { SpaceTree } from './components/SpaceTree';
 import { SelectedCamerasList } from './components/SelectedCameras/SelectedCamerasList';
 import { ThemeToggle } from './components/ThemeToggle';
 
@@ -90,13 +90,14 @@ function AppContent() {
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
   const [selectedStreamIds, setSelectedStreamIds] = useState<Set<number>>(new Set());
   const [spacesTree, setSpacesTree] = useState<TreeNode[]>([]);
-  // Static virtualization configuration
-  const virtualizationConfig = {
+  
+  // Static virtualization configuration - memoized
+  const virtualizationConfig = useMemo(() => ({
     enabled: true,
     maxHeight: 400,
     itemHeight: 48,
     threshold: 7 // Enable virtualization when there are 7+ items for optimal performance
-  };
+  }), []);
 
   // Use useOptimistic for optimistic updates
   const [optimisticSpacesTree, updateOptimisticTree] = useOptimistic(
@@ -129,24 +130,25 @@ function AppContent() {
     }
   }, [spacesData, spacesError]);
 
-  const handleSiteChange = (siteId: string) => {
+  // Memoized event handlers
+  const handleSiteChange = useCallback((siteId: string) => {
     setSelectedSiteId(siteId);
     // Reset spaces and selections when site changes
     setSpacesTree([]);
     setSelectedStreamIds(new Set());
-  };
+  }, []);
 
-  const handleSelectionChange = (newSelectedStreamIds: Set<number>) => {
+  const handleSelectionChange = useCallback((newSelectedStreamIds: Set<number>) => {
     setSelectedStreamIds(newSelectedStreamIds);
-  };
+  }, []);
 
-  const handleRemoveStream = (streamId: number) => {
+  const handleRemoveStream = useCallback((streamId: number) => {
     const newSelectedIds = new Set(selectedStreamIds);
     newSelectedIds.delete(streamId);
     setSelectedStreamIds(newSelectedIds);
-  };
+  }, [selectedStreamIds]);
 
-  const handleAddStream = async (spaceId: number, streamName: string) => {
+  const handleAddStream = useCallback(async (spaceId: number, streamName: string) => {
     // Generate temporary ID for optimistic update
     const tempId = Date.now();
     const newStream: Stream = {
@@ -164,6 +166,8 @@ function AppContent() {
     });
 
     try {
+      // Add 2-second delay for optimistic update
+      await new Promise(resolve => setTimeout(resolve, 2000));
       // Make API call
       const response = await addStreamToSpace(spaceId, streamName);
       
@@ -202,9 +206,9 @@ function AppContent() {
       const errorMessage = error instanceof Error ? error.message : 'Failed to add stream';
       showError(`Failed to add stream: ${errorMessage}`);
     }
-  };
+  }, [updateOptimisticTree, showSuccess, showError]);
 
-  const handleDeleteStream = async (streamId: number) => {
+  const handleDeleteStream = useCallback(async (streamId: number) => {
     // Find stream name for toast message
     const findStreamName = (nodes: TreeNode[]): string | null => {
       for (const node of nodes) {
@@ -234,6 +238,8 @@ function AppContent() {
     });
 
     try {
+      // Add 2-second delay for optimistic update
+      await new Promise(resolve => setTimeout(resolve, 2000));
       // Make API call
       await deleteStream(streamId);
       
@@ -256,10 +262,13 @@ function AppContent() {
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete stream';
       showError(`Failed to delete stream: ${errorMessage}`);
     }
-  };
+  }, [optimisticSpacesTree, selectedStreamIds, updateOptimisticTree, showSuccess, showError]);
 
   // Use optimistic tree for UI rendering and regular tree for data source
-  const selectedStreams = getSelectedStreamsInTree(optimisticSpacesTree, selectedStreamIds);
+  const selectedStreams = useMemo(() => 
+    getSelectedStreamsInTree(optimisticSpacesTree, selectedStreamIds),
+    [optimisticSpacesTree, selectedStreamIds]
+  );
 
   return (
     <div className="app">
