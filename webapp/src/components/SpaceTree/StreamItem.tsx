@@ -56,7 +56,7 @@ export const StreamItem: React.FC<StreamItemProps> = ({
     } catch (error) {
       // Revert optimistic state by syncing with real state
       dispatch(setOptimisticSpaces(spaces));
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete stream';
+      const errorMessage = error instanceof Error ? error.message : 'Something went wrong';
       dispatch(addToast({
         id: Date.now().toString(),
         message: `Failed to delete stream: ${errorMessage}`,

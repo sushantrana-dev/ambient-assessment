@@ -114,7 +114,7 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
         // Remove optimistic update on error
         dispatch(removeStreamOptimistically(tempId));
         
-        const errorMessage = error instanceof Error ? error.message : 'Failed to add stream';
+        const errorMessage = error instanceof Error ? error.message : 'Something went wrong';
         dispatch(addToast({
           id: Date.now().toString(),
           message: `Failed to add stream: ${errorMessage}`,
