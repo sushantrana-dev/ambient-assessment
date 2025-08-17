@@ -1,13 +1,10 @@
 import React from 'react';
 import Toast from './Toast';
-import { useAppDispatch } from '../store/hooks';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { removeToast } from '../store/slices/toastSlice';
 
-interface ToastContainerProps {
-  toasts: any[];
-}
-
-const ToastContainer: React.FC<ToastContainerProps> = ({ toasts }) => {
+const ToastContainer: React.FC = () => {
+  const toasts = useAppSelector(state => state.toast.toasts);
   const dispatch = useAppDispatch();
 
   const handleRemoveToast = (id: string) => {

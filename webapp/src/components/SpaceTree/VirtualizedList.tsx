@@ -19,8 +19,6 @@ export function VirtualizedList<T>({
 }: VirtualizedListProps<T>) {
   const [scrollTop, setScrollTop] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const totalHeight = items.length * itemHeight;
   const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
   const endIndex = Math.min(
     items.length - 1,
@@ -55,7 +53,7 @@ export function VirtualizedList<T>({
     >
       <div
         style={{
-          height: totalHeight,
+          height: '100%',
           position: 'relative'
         }}
       >

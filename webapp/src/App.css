@@ -274,7 +274,6 @@ body {
 
 /* Space Tree */
 .space-tree {
-  margin-top: 1rem;
   background: var(--bg-primary);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -658,6 +657,16 @@ body {
   gap: 0.5rem;
   padding: 1rem 1.5rem;
   flex: 1;
+  overflow-y: auto;
+}
+
+.selected-cameras__virtualized-list {
+  flex: 1;
+  overflow: hidden;
+}
+
+.selected-cameras__virtualized-list .virtualized-list__container {
+  height: 100%;
   overflow-y: auto;
 }
 

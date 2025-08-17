@@ -1,15 +1,10 @@
 import React, { useCallback, useMemo } from 'react';
 import { useSites } from '../hooks/useApi';
-import { useAppDispatch } from '../store/hooks';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { setSelectedSite } from '../store/slices/siteSlice';
 
-interface SiteSelectorProps {
-  selectedSiteId: string | null;
-}
-
-export const SiteSelector: React.FC<SiteSelectorProps> = ({
-  selectedSiteId
-}) => {
+export const SiteSelector: React.FC = () => {
+  const selectedSiteId = useAppSelector(state => state.site.selectedSiteId);
   const dispatch = useAppDispatch();
   const { data: sitesData, loading, error } = useSites();
 

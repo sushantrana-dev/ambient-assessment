@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { SiteSelector } from './components/SiteSelector';
 import { SpaceTree } from './components/SpaceTree';
 import { SelectedCamerasList } from './components/SelectedCameras/SelectedCamerasList';
@@ -8,7 +8,6 @@ import { ReduxProvider } from './store/Provider';
 import { useAppDispatch, useAppSelector } from './store/hooks';
 import { fetchSpaces, clearSpaces } from './store/slices/spacesSlice';
 import { clearSelection } from './store/slices/selectionSlice';
-import { getSelectedStreamsInTree } from './utils/treeUtils';
 import ToastContainer from './components/ToastContainer';
 import './App.css';
 
@@ -17,19 +16,7 @@ function AppContent() {
   
   // Redux state selectors
   const selectedSiteId = useAppSelector(state => state.site.selectedSiteId);
-  const spaces = useAppSelector(state => state.spaces.optimisticSpaces);
-  const selectedStreamIds = useAppSelector(state => state.selection.selectedStreamIds);
-  const loading = useAppSelector(state => state.spaces.loading);
   const error = useAppSelector(state => state.spaces.error);
-  const toasts = useAppSelector(state => state.toast.toasts);
-  
-  // Static virtualization configuration - memoized
-  const virtualizationConfig = useMemo(() => ({
-    enabled: true,
-    maxHeight: 400,
-    itemHeight: 48,
-    threshold: 7 // Enable virtualization when there are 7+ items for optimal performance
-  }), []);
 
   // Fetch spaces when site changes
   useEffect(() => {
@@ -41,12 +28,6 @@ function AppContent() {
     }
   }, [selectedSiteId, dispatch]);
 
-  // Calculate selected streams
-  const selectedStreams = useMemo(() => 
-    getSelectedStreamsInTree(spaces, selectedStreamIds),
-    [spaces, selectedStreamIds]
-  );
-
   return (
     <div className="app">
       <header className="app__header">
@@ -55,9 +36,7 @@ function AppContent() {
           <span className="app__title-brand">AMBIENT</span>
         </h1>
         <div className="app__header-controls">
-          <SiteSelector
-            selectedSiteId={selectedSiteId}
-          />
+          <SiteSelector />
           <ThemeToggle />
         </div>
       </header>
@@ -70,27 +49,17 @@ function AppContent() {
                 <div className="error">Error loading spaces: {error}</div>
               )}
               
-              <SpaceTree
-                isLoading={loading}
-                enableVirtualization={virtualizationConfig.enabled}
-                virtualizationConfig={{
-                  maxHeight: virtualizationConfig.maxHeight,
-                  itemHeight: virtualizationConfig.itemHeight,
-                  threshold: virtualizationConfig.threshold
-                }}
-              />
+              <SpaceTree />
             </div>
           )}
         </div>
         
         <div className="app__content">
-          <SelectedCamerasList
-            selectedStreams={selectedStreams}
-          />
+          <SelectedCamerasList />
         </div>
       </main>
       
-      <ToastContainer toasts={toasts} />
+      <ToastContainer />
     </div>
   );
 }

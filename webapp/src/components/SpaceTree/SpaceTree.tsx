@@ -2,25 +2,20 @@ import React, { useMemo } from 'react';
 import { SpaceNode } from './SpaceNode';
 import { useAppSelector } from '../../store/hooks';
 
-interface SpaceTreeProps {
-  isLoading?: boolean;
-  enableVirtualization?: boolean;
-  virtualizationConfig?: {
-    maxHeight?: number;
-    itemHeight?: number;
-    threshold?: number;
-  };
-}
-
-export const SpaceTree: React.FC<SpaceTreeProps> = ({
-  isLoading = false,
-  enableVirtualization = true,
-  virtualizationConfig = {}
-}) => {
+export const SpaceTree: React.FC = () => {
   // Redux state selectors
   const spaces = useAppSelector(state => state.spaces.optimisticSpaces);
   const selectedStreamIds = useAppSelector(state => state.selection.selectedStreamIds);
   const expandedNodes = useAppSelector(state => state.spaces.expandedNodes);
+  const loading = useAppSelector(state => state.spaces.loading);
+
+  // Static virtualization configuration
+  const virtualizationConfig = useMemo(() => ({
+    enabled: true,
+    maxHeight: 400,
+    itemHeight: 48,
+    threshold: 7
+  }), []);
 
   // Update nodes with expansion state
   const spacesWithExpansion = useMemo(() => {
@@ -35,7 +30,7 @@ export const SpaceTree: React.FC<SpaceTreeProps> = ({
   }, [spaces, expandedNodes]);
 
   // Loading state
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="space-tree">
         <div className="space-tree__header">
@@ -94,7 +89,7 @@ export const SpaceTree: React.FC<SpaceTreeProps> = ({
             key={node.id}
             node={node}
             level={0}
-            enableVirtualization={enableVirtualization}
+            enableVirtualization={virtualizationConfig.enabled}
             virtualizationConfig={virtualizationConfig}
           />
         ))}

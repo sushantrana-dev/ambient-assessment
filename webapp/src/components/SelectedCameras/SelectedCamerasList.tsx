@@ -1,16 +1,24 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { Stream } from '../../types/api.types';
-import { useAppDispatch } from '../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { removeStreamFromSelection } from '../../store/slices/selectionSlice';
+import { VirtualizedList } from '../SpaceTree/VirtualizedList';
+import { getSelectedStreamsInTree } from '../../utils/treeUtils';
 
 interface SelectedCamerasListProps {
-  selectedStreams: Stream[];
+  virtualizationThreshold?: number; // Number of items before enabling virtualization
 }
 
 export const SelectedCamerasList: React.FC<SelectedCamerasListProps> = ({
-  selectedStreams
+  virtualizationThreshold = 10
 }) => {
+  const selectedStreams = useAppSelector(state => {
+    const spaces = state.spaces.optimisticSpaces;
+    const selectedStreamIds = state.selection.selectedStreamIds;
+    return getSelectedStreamsInTree(spaces, selectedStreamIds);
+  });
   const dispatch = useAppDispatch();
+  const [containerHeight, setContainerHeight] = useState(400);
 
   // Memoize the sorted streams to prevent unnecessary re-sorting
   const sortedStreams = useMemo(() => {
@@ -37,6 +45,68 @@ export const SelectedCamerasList: React.FC<SelectedCamerasListProps> = ({
     }
   }, []);
 
+  // Calculate container height based on available space
+  useEffect(() => {
+    const updateHeight = () => {
+      const container = document.querySelector('.selected-cameras');
+      if (container) {
+        const headerHeight = 80; // Approximate header height
+        const availableHeight = window.innerHeight - headerHeight - 100; // Account for margins/padding
+        setContainerHeight(Math.max(200, availableHeight));
+      }
+    };
+
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
+
+  // Render individual stream item
+  const renderStreamItem = useCallback((stream: Stream, index: number) => (
+    <div
+      key={stream.id}
+      className="selected-cameras__item"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div className="selected-cameras__item-content">
+        <div className="selected-cameras__item-icon">
+          <svg 
+            width="16" 
+            height="16" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path 
+              d="M15 10L19.552 7.724C19.834 7.551 20.178 7.502 20.495 7.587C20.812 7.672 21.073 7.884 21.211 8.164L22.5 10.5L21.211 12.836C21.073 13.116 20.812 13.328 20.495 13.413C20.178 13.498 19.834 13.449 19.552 13.276L15 11V10Z" 
+              stroke="currentColor" 
+              strokeWidth="1.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+            <path 
+              d="M3 7C3 5.89543 3.89543 5 5 5H13C14.1046 5 15 5.89543 15 7V17C15 18.1046 14.1046 19 13 19H5C3.89543 19 3 18.1046 3 17V7Z" 
+              stroke="currentColor" 
+              strokeWidth="1.5"
+            />
+          </svg>
+        </div>
+        <span className="selected-cameras__stream-name">{stream.name}</span>
+      </div>
+      <button
+        type="button"
+        className="selected-cameras__remove-btn"
+        onClick={() => handleRemoveStream(stream.id)}
+        aria-label={`Remove ${stream.name} from selection`}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  ), [handleMouseEnter, handleMouseLeave, handleRemoveStream]);
+
   if (selectedStreams.length === 0) {
     return (
       <div className="selected-cameras">
@@ -62,50 +132,18 @@ export const SelectedCamerasList: React.FC<SelectedCamerasListProps> = ({
         <span className="selected-cameras__count">{selectedStreams.length}</span>
       </div>
       <div className="selected-cameras__list">
-        {sortedStreams.map((stream) => (
-          <div
-            key={stream.id}
-            className="selected-cameras__item"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          >
-            <div className="selected-cameras__item-content">
-              <div className="selected-cameras__item-icon">
-                <svg 
-                  width="16" 
-                  height="16" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path 
-                    d="M15 10L19.552 7.724C19.834 7.551 20.178 7.502 20.495 7.587C20.812 7.672 21.073 7.884 21.211 8.164L22.5 10.5L21.211 12.836C21.073 13.116 20.812 13.328 20.495 13.413C20.178 13.498 19.834 13.449 19.552 13.276L15 11V10Z" 
-                    stroke="currentColor" 
-                    strokeWidth="1.5" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                  />
-                  <path 
-                    d="M3 7C3 5.89543 3.89543 5 5 5H13C14.1046 5 15 5.89543 15 7V17C15 18.1046 14.1046 19 13 19H5C3.89543 19 3 18.1046 3 17V7Z" 
-                    stroke="currentColor" 
-                    strokeWidth="1.5"
-                  />
-                </svg>
-              </div>
-              <span className="selected-cameras__stream-name">{stream.name}</span>
-            </div>
-            <button
-              type="button"
-              className="selected-cameras__remove-btn"
-              onClick={() => handleRemoveStream(stream.id)}
-              aria-label={`Remove ${stream.name} from selection`}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-          </div>
-        ))}
+        {sortedStreams.length > virtualizationThreshold ? (
+          <VirtualizedList
+            items={sortedStreams}
+            renderItem={renderStreamItem}
+            itemHeight={64} // Height: 28px padding + ~36px content
+            containerHeight={containerHeight}
+            overscan={5}
+            className="selected-cameras__virtualized-list"
+          />
+        ) : (
+          sortedStreams.map((stream) => renderStreamItem(stream, 0))
+        )}
       </div>
     </div>
   );
