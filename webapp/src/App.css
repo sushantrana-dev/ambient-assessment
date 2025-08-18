@@ -222,7 +222,7 @@ body {
 }
 
 .site-selector__select {
-  padding: 0.5rem 0.75rem;
+  padding: 0.3;
   border: 2px solid var(--border-primary);
   border-radius: 6px;
   font-size: 0.9rem;
@@ -574,7 +574,7 @@ body {
   min-width: 0;
 }
 
-/* Selected Cameras */
+/* Selected Streams */
 .selected-cameras {
   background: var(--bg-primary);
   border-radius: 12px;

@@ -111,14 +111,14 @@ export const SelectedCamerasList: React.FC<SelectedCamerasListProps> = ({
     return (
       <div className="selected-cameras">
         <div className="selected-cameras__header">
-          <h3 className="selected-cameras__title">Selected Cameras</h3>
+          <h3 className="selected-cameras__title">Selected Streams</h3>
           <span className="selected-cameras__count">0</span>
         </div>
         <div className="selected-cameras__empty">
           <div className="selected-cameras__empty-icon">📹</div>
-          <h4 className="selected-cameras__empty-title">No cameras selected</h4>
+          <h4 className="selected-cameras__empty-title">No Streams selected</h4>
           <p className="selected-cameras__empty-description">
-            Select cameras from the spaces tree to see them here.
+            Select streams from the spaces tree to see them here.
           </p>
         </div>
       </div>
@@ -128,7 +128,7 @@ export const SelectedCamerasList: React.FC<SelectedCamerasListProps> = ({
   return (
     <div className="selected-cameras">
       <div className="selected-cameras__header">
-        <h3 className="selected-cameras__title">Selected Cameras</h3>
+        <h3 className="selected-cameras__title">Selected Streams</h3>
         <span className="selected-cameras__count">{selectedStreams.length}</span>
       </div>
       <div className="selected-cameras__list">
