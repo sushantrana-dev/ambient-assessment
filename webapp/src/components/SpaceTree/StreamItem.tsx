@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { toggleStreamSelection } from '../../store/slices/selectionSlice';
 import { removeStreamOptimistically, removeStream, setOptimisticSpaces } from '../../store/slices/spacesSlice';
 import { addToast } from '../../store/slices/toastSlice';
+import { getLevelPadding } from '../../utils/treeUtils';
 
 interface StreamItemProps {
   stream: Stream;
@@ -68,7 +69,7 @@ export const StreamItem: React.FC<StreamItemProps> = ({
   return (
     <div 
       className="stream-item"
-      style={{ paddingLeft: `${level * 24 + 36}px` }}
+      style={{ paddingLeft: getLevelPadding(level, 'stream-item') }}
     >
       <label className="stream-item__label">
         <input

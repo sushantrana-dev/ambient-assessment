@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { getVirtualizedHeightClass, getVirtualizedItemHeightClass } from '../../utils/treeUtils';
 
 interface VirtualizedListProps<T> {
   items: T[];
@@ -43,34 +44,19 @@ export function VirtualizedList<T>({
   return (
     <div
       ref={containerRef}
-      className={`virtualized-list ${className}`}
-      style={{
-        height: containerHeight,
-        overflow: 'auto',
-        position: 'relative'
-      }}
+      className={`virtualized-list ${getVirtualizedHeightClass(containerHeight)} ${className}`}
       onScroll={handleScroll}
     >
       <div
-        style={{
-          height: '100%',
-          position: 'relative'
-        }}
+        className="virtualized-list__viewport"
       >
         <div
-          style={{
-            position: 'absolute',
-            top: offsetY,
-            left: 0,
-            right: 0
-          }}
+          className="virtualized-list__content"
         >
           {visibleItems.map((item, index) => (
             <div
               key={startIndex + index}
-              style={{
-                height: itemHeight
-              }}
+              className={`virtualized-list__item ${getVirtualizedItemHeightClass(itemHeight)}`}
             >
               {renderItem(item, startIndex + index)}
             </div>

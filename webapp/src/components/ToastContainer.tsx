@@ -2,6 +2,7 @@ import React from 'react';
 import Toast from './Toast';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { removeToast } from '../store/slices/toastSlice';
+import { getToastOffsetClass } from '../utils/treeUtils';
 
 const ToastContainer: React.FC = () => {
   const toasts = useAppSelector(state => state.toast.toasts);
@@ -16,11 +17,7 @@ const ToastContainer: React.FC = () => {
       {toasts.map((toast, index) => (
         <div
           key={toast.id}
-          className="toast-wrapper"
-          style={{
-            transform: `translateY(${index * 90}px)`,
-            zIndex: 1000 - index, // Higher toasts have higher z-index
-          }}
+          className={`toast-wrapper ${getToastOffsetClass(index)}`}
         >
           <Toast
             id={toast.id}

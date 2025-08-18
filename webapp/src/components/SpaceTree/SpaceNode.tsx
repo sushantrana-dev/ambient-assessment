@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { TreeNode, CheckboxState } from '../../types/api.types';
 import { StreamItem } from './StreamItem';
-import { VirtualizedChildren } from './VirtualizedChildren';
-import { calculateSpaceCheckboxState } from '../../utils/treeUtils';
+import { VirtualizedChildren } from '../VirtualisedComps/VirtualizedChildren';
+import { calculateSpaceCheckboxState, getLevelPadding } from '../../utils/treeUtils';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { toggleExpandedNode, addStreamOptimistically, removeStreamOptimistically, replaceStreamOptimistically } from '../../store/slices/spacesSlice';
 import { selectAllStreamsInSpace, deselectAllStreamsInSpace } from '../../store/slices/selectionSlice';
@@ -92,7 +92,7 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
 
       // Optimistic update
       dispatch(addStreamOptimistically({ spaceId: node.id, stream: tempStream }));
-
+      handleCancelStream();
       try {
         // Make API call
         const result = await dispatch(addStream({ spaceId: node.id, streamName: newStreamName.trim() })).unwrap();
@@ -121,9 +121,6 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
           type: 'error'
         }));
       }
-      
-      setIsAddingStream(false);
-      setNewStreamName('');
     }
   }, [newStreamName, node.id, dispatch]);
 
@@ -140,6 +137,7 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
       e.preventDefault();
       handleCancelStream();
     }
+ 
   }, [handleSubmitStream, handleCancelStream]);
 
   const handleStreamNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,7 +166,7 @@ export const SpaceNode: React.FC<SpaceNodeProps> = ({
     <div className="space-node">
       <div 
         className="space-node__header"
-        style={{ paddingLeft: `${level * 24}px` }}
+        style={{ paddingLeft: getLevelPadding(level, 'space-node-header') }}
       >
         {hasChildren && (
           <button

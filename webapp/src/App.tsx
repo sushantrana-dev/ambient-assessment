@@ -43,15 +43,10 @@ function AppContent() {
       
       <main className="app__main">
         <div className="app__sidebar">
-          {selectedSiteId && (
             <div className="app__spaces-section">
-              {error && (
-                <div className="error">Error loading spaces: {error}</div>
-              )}
               
               <SpaceTree />
             </div>
-          )}
         </div>
         
         <div className="app__content">

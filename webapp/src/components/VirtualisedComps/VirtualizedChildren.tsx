@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { TreeNode, Stream } from '../../types/api.types';
-import { StreamItem } from './StreamItem';
-import { SpaceNode } from './SpaceNode';
+import { StreamItem } from '../SpaceTree/StreamItem';
+import { SpaceNode } from '../SpaceTree/SpaceNode';
+import { getVirtualizedHeightClass, getVirtualizedItemHeightClass } from '../../utils/treeUtils';
 
 interface VirtualizedChildrenProps {
   streams: Stream[];
@@ -123,34 +124,15 @@ export function VirtualizedChildren({
     <div className="space-node__children virtualized-children">
       <div
         ref={containerRef}
-        className="virtualized-children__container"
-        style={{
-          height: maxHeight,
-          overflow: 'auto',
-          position: 'relative'
-        }}
+        className={`virtualized-children__container ${getVirtualizedHeightClass(maxHeight)}`}
         onScroll={handleScroll}
       >
-        <div
-          style={{
-            height: totalHeight,
-            position: 'relative'
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              top: offsetY,
-              left: 0,
-              right: 0
-            }}
-          >
+        <div className="virtualized-children__viewport">
+          <div className="virtualized-children__content">
             {visibleItems.map((item) => (
               <div
                 key={`${item.type}-${item.id}`}
-                style={{
-                  height: itemHeight
-                }}
+                className={`virtualized-children__item ${getVirtualizedItemHeightClass(itemHeight)}`}
               >
                 {renderChild(item)}
               </div>

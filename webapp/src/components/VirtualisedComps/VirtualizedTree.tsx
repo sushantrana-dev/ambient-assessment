@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { TreeNode, Stream } from '../../types/api.types';
-import { StreamItem } from './StreamItem';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { toggleExpandedNode } from '../../store/slices/spacesSlice';
 import { selectAllStreamsInSpace, deselectAllStreamsInSpace } from '../../store/slices/selectionSlice';
+import { StreamItem } from '../SpaceTree/StreamItem';
+import { getLevelPadding, getVirtualizedHeightClass, getVirtualizedItemHeightClass } from '../../utils/treeUtils';
 
 interface VirtualizedTreeProps {
   streams: Stream[];
@@ -110,7 +111,7 @@ export function VirtualizedTree({
         <div 
           key={spaceNode.id}
           className="space-node"
-          style={{ paddingLeft: `${item.level * 24}px` }}
+          style={{ paddingLeft: getLevelPadding(item.level, 'space-node') }}
         >
           <div className="space-node__header">
             <button
@@ -183,34 +184,15 @@ export function VirtualizedTree({
   return (
     <div
       ref={containerRef}
-      className="virtualized-tree"
-      style={{
-        height: containerHeight,
-        overflow: 'auto',
-        position: 'relative'
-      }}
+      className={`virtualized-tree ${getVirtualizedHeightClass(containerHeight)}`}
       onScroll={handleScroll}
     >
-      <div
-        style={{
-          height: totalHeight,
-          position: 'relative'
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            top: offsetY,
-            left: 0,
-            right: 0
-          }}
-        >
+      <div className="virtualized-tree__viewport">
+        <div className="virtualized-tree__content">
           {visibleItems.map((item, index) => (
             <div
               key={`${item.type}-${item.id}`}
-              style={{
-                height: itemHeight
-              }}
+              className={`virtualized-tree__item ${getVirtualizedItemHeightClass(itemHeight)}`}
             >
               {renderItem(item, startIndex + index)}
             </div>

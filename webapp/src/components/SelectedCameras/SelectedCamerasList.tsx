@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { Stream } from '../../types/api.types';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { removeStreamFromSelection } from '../../store/slices/selectionSlice';
-import { VirtualizedList } from '../SpaceTree/VirtualizedList';
+import { VirtualizedList } from '../VirtualisedComps/VirtualizedList';
 import { getSelectedStreamsInTree } from '../../utils/treeUtils';
 
 interface SelectedCamerasListProps {
